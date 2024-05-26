@@ -1,5 +1,6 @@
 package org.lsposed.lspatch.config
 
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.room.Room
@@ -10,7 +11,9 @@ import org.lsposed.lspatch.database.LSPDatabase
 import org.lsposed.lspatch.database.entity.Module
 import org.lsposed.lspatch.database.entity.Scope
 import org.lsposed.lspatch.lspApp
+import org.lsposed.lspatch.manager.InjectedModuleService
 import org.lsposed.lspatch.util.ModuleLoader
+import org.lsposed.lspd.service.ILSPInjectedModuleService
 import java.io.File
 
 object ConfigManager {
@@ -81,6 +84,11 @@ object ConfigManager {
                         packageName = it.pkgName
                         apkPath = it.apkPath
                         file = ModuleLoader.loadModule(it.apkPath)
+                        applicationInfo = ApplicationInfo().apply {
+                            sourceDir = it.apkPath
+                            packageName = it.pkgName
+                        }
+                        service = ILSPInjectedModuleService.Stub.asInterface(InjectedModuleService())
                     }
                 }
             }
