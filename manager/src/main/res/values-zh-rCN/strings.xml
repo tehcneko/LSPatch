@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">地道修修</string>
     <string name="add">添加</string>
     <string name="install">安装</string>
     <string name="installing">安装中</string>
