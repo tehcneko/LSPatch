@@ -60,8 +60,15 @@ public class ModuleLoader {
         var moduleLibraryNames = new ArrayList<String>(1);
         try (var apkFile = new ZipFile(path)) {
             readDexes(apkFile, preLoadedDexes);
-            readName(apkFile, "assets/xposed_init", moduleClassNames);
-            readName(apkFile, "assets/native_init", moduleLibraryNames);
+            readName(apkFile, "META-INF/xposed/java_init.list", moduleClassNames);
+            if (moduleClassNames.isEmpty()) {
+                file.legacy = true;
+                readName(apkFile, "assets/xposed_init", moduleClassNames);
+                readName(apkFile, "assets/native_init", moduleLibraryNames);
+            } else {
+                file.legacy = false;
+                readName(apkFile, "META-INF/xposed/native_init.list", moduleLibraryNames);
+            }
         } catch (IOException e) {
             Log.e(TAG, "Can not open " + path, e);
             return null;
