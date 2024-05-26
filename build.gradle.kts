@@ -45,7 +45,7 @@ val (coreCommitCount, coreLatestTag) = FileRepositoryBuilder().setGitDir(rootPro
 
 // sync from https://github.com/JingMatrix/LSPosed/blob/master/build.gradle.kts
 val defaultManagerPackageName by extra("org.lsposed.lspatch")
-val apiCode by extra(93)
+val apiCode by extra(100)
 val verCode by extra(commitCount)
 val verName by extra("0.7")
 val coreVerCode by extra(coreCommitCount)
