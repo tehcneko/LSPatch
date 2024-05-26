@@ -22,14 +22,19 @@ object ManagerService : ILSPApplicationService.Stub() {
     override fun getLegacyModulesList(): List<Module> {
         val app = lspApp.packageManager.getNameForUid(Binder.getCallingUid())
         val list = app?.let {
-            runBlocking { ConfigManager.getModuleFilesForApp(it) }
+            runBlocking { ConfigManager.getModuleFilesForApp(it).filter { it.file.legacy } }
         }.orEmpty()
         Log.d(TAG, "$app calls getLegacyModulesList: $list")
         return list
     }
 
     override fun getModulesList(): List<Module> {
-        return emptyList()
+        val app = lspApp.packageManager.getNameForUid(Binder.getCallingUid())
+        val list = app?.let {
+            runBlocking { ConfigManager.getModuleFilesForApp(it).filter { !it.file.legacy } }
+        }.orEmpty()
+        Log.d(TAG, "$app calls getModulesList: $list")
+        return list
     }
 
     override fun getPrefsPath(packageName: String): String {

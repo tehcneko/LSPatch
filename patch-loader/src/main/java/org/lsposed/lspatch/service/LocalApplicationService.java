@@ -1,6 +1,7 @@
 package org.lsposed.lspatch.service;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 public class LocalApplicationService extends ILSPApplicationService.Stub {
@@ -50,6 +52,10 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
                 module.apkPath = cacheApkPath;
                 module.packageName = packageName;
                 module.file = ModuleLoader.loadModule(cacheApkPath);
+                module.applicationInfo = new ApplicationInfo();
+                module.applicationInfo.packageName = packageName;
+                module.applicationInfo.sourceDir = cacheApkPath;
+                module.service = InjectedModuleService.asInterface(new InjectedModuleService());
                 modules.add(module);
             }
         } catch (IOException e) {
@@ -64,12 +70,12 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
 
     @Override
     public List<Module> getLegacyModulesList() {
-        return modules;
+        return modules.stream().filter(module -> module.file.legacy).collect(Collectors.toList());
     }
 
     @Override
     public List<Module> getModulesList() {
-        return new ArrayList<>();
+        return modules.stream().filter(module -> !module.file.legacy).collect(Collectors.toList());
     }
 
     @Override
