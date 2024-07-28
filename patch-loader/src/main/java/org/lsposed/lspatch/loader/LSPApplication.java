@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 import de.robv.android.xposed.XposedHelpers;
+import de.robv.android.xposed.XposedInit;
 import hidden.HiddenApiBridge;
 
 /**
@@ -86,6 +87,7 @@ public class LSPApplication {
         disableProfile(context);
         Startup.initXposed(false, ActivityThread.currentProcessName(), context.getApplicationInfo().dataDir, service);
         Startup.bootstrapXposed();
+        XposedInit.loadModules(activityThread);
         // WARN: Since it uses `XResource`, the following class should not be initialized
         // before forkPostCommon is invoke. Otherwise, you will get failure of XResources
         Log.i(TAG, "Load modules");

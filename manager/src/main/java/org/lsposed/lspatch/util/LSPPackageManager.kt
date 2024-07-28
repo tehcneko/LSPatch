@@ -30,6 +30,8 @@ import java.io.File
 import java.io.IOException
 import java.text.Collator
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -41,9 +43,9 @@ object LSPPackageManager {
     const val STATUS_USER_CANCELLED = -2
 
     @Parcelize
-    class AppInfo(val app: ApplicationInfo, val label: String) : Parcelable {
+    class AppInfo(val app: ApplicationInfo, val label: String, val description: String, val minVersion: Int) : Parcelable {
         val isXposedModule: Boolean
-            get() = app.metaData?.get("xposedminversion") != null
+            get() = minVersion > 0
     }
 
     var appList by mutableStateOf(listOf<AppInfo>())
@@ -53,13 +55,77 @@ object LSPPackageManager {
     private val iconLoader = AppIconLoader(lspApp.resources.getDimensionPixelSize(android.R.dimen.app_icon_size), false, lspApp)
     private val appIcon = mutableMapOf<String, ImageBitmap>()
 
+    private fun getModernModuleApk(info: ApplicationInfo): ZipFile? {
+        val apks: Array<String?> = info.splitSourceDirs?.let{
+            it.copyOf(it.size + 1).apply {
+                set(it.size, info.sourceDir)
+            }
+        } ?: arrayOf(info.sourceDir)
+        var zip: ZipFile? = null
+        for (apk in apks) {
+            try {
+                zip = ZipFile(apk)
+                if (zip.getEntry("META-INF/xposed/java_init.list") != null) {
+                    return zip
+                }
+                zip.close()
+                zip = null
+            } catch (ignored: IOException) {
+            }
+        }
+        return zip
+    }
+
+    private fun extractIntPart(str: String): Int {
+        var result = 0
+        val length = str.length
+        for (offset in 0 until length) {
+            val c = str[offset]
+            if (c in '0'..'9') result = result * 10 + (c.code - '0'.code)
+            else break
+        }
+        return result
+    }
+
+    fun getAppInfo(applicationInfo: ApplicationInfo): AppInfo {
+        val label = lspApp.packageManager.getApplicationLabel(applicationInfo).toString()
+        var description = ""
+        val modernApk = getModernModuleApk(applicationInfo)
+        var minVersion = -1
+        modernApk.let { zip ->
+            if (zip != null) {
+                minVersion = 100
+                try {
+                    val propEntry: ZipEntry? = zip.getEntry("META-INF/xposed/module.prop")
+                    propEntry?.let {
+                        val prop = Properties()
+                        prop.load(zip.getInputStream(propEntry))
+                        minVersion = extractIntPart(prop.getProperty("minApiVersion"))
+                    }
+                    zip.close()
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error while closing modern module APK", e)
+                } catch (e: OutOfMemoryError) {
+                    Log.e(TAG, "Error while closing modern module APK", e)
+                }
+                description = applicationInfo.loadDescription(lspApp.packageManager)?.toString() ?: ""
+            } else {
+                val metaData = applicationInfo.metaData
+                metaData?.let {
+                    minVersion = metaData.getInt("xposedminversion", -1)
+                    description = metaData.getString("xposeddescription") ?: ""
+                }
+            }
+        }
+        return AppInfo(applicationInfo, label, description, minVersion)
+    }
+
     suspend fun fetchAppList() {
         withContext(Dispatchers.IO) {
             val pm = lspApp.packageManager
             val collection = mutableListOf<AppInfo>()
             pm.getInstalledApplications(PackageManager.GET_META_DATA).forEach {
-                val label = pm.getApplicationLabel(it)
-                collection.add(AppInfo(it, label.toString()))
+                collection.add(getAppInfo(it))
                 appIcon[it.packageName] = iconLoader.loadIcon(it).asImageBitmap()
             }
             collection.sortWith(compareBy(Collator.getInstance(Locale.getDefault()), AppInfo::label))
@@ -180,8 +246,7 @@ object LSPPackageManager {
                     if (primary == null) {
                         primary = appInfo
                     }
-                    val label = lspApp.packageManager.getApplicationLabel(appInfo).toString()
-                    AppInfo(appInfo, label)
+                    getAppInfo(appInfo)
                 }
                 // TODO: Check selected apks are from the same app
                 primary?.splitSourceDirs = splits.toTypedArray()

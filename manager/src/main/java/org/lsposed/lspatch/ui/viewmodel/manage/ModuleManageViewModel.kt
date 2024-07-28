@@ -20,10 +20,10 @@ class ModuleManageViewModel : ViewModel() {
 
     val appList: List<Pair<LSPPackageManager.AppInfo, XposedInfo>> by derivedStateOf {
         LSPPackageManager.appList.mapNotNull { appInfo ->
-            val metaData = appInfo.app.metaData ?: return@mapNotNull null
+            if (appInfo.minVersion < 0) return@mapNotNull null
             appInfo to XposedInfo(
-                metaData.getInt("xposedminversion", -1).also { if (it == -1) return@mapNotNull null },
-                metaData.getString("xposeddescription") ?: "",
+                appInfo.minVersion,
+                    appInfo.description,
                 emptyList() // TODO: scope
             )
         }.also {
