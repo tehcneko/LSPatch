@@ -12,6 +12,7 @@ plugins {
     alias(lspatch.plugins.google.devtools.ksp)
     alias(lspatch.plugins.rikka.tools.refine)
     alias(lspatch.plugins.kotlin.android)
+    alias(lspatch.plugins.compose.compiler)
     id("kotlin-parcelize")
 }
 
@@ -62,16 +63,19 @@ afterEvaluate {
         val variantLowered = variant.name.lowercase()
         val variantCapped = variant.name.replaceFirstChar { it.uppercase() }
 
-        task<Copy>("copy${variantCapped}Assets") {
+        tasks.register("copy${variantCapped}Assets", Copy::class) {
             dependsOn(":meta-loader:copy$variantCapped")
             dependsOn(":patch-loader:copy$variantCapped")
-            tasks["merge${variantCapped}Assets"].dependsOn(this)
 
             into("$buildDir/intermediates/assets/$variantLowered/merge${variantCapped}Assets")
             from("${rootProject.projectDir}/out/assets/${variant.name}")
         }
 
-        task<Copy>("build$variantCapped") {
+        tasks.named("merge${variantCapped}Assets") {
+            dependsOn("copy${variantCapped}Assets")
+        }
+
+        tasks.register("build$variantCapped", Copy::class) {
             dependsOn(tasks["assemble$variantCapped"])
             from(variant.outputs.map { it.outputFile })
             into("${rootProject.projectDir}/out/$variantLowered")

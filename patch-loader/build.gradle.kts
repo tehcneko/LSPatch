@@ -31,14 +31,14 @@ android {
 androidComponents.onVariants { variant ->
     val variantCapped = variant.name.replaceFirstChar { it.uppercase() }
 
-    task<Copy>("copyDex$variantCapped") {
+    tasks.register("copyDex$variantCapped", Copy::class) {
         dependsOn("assemble$variantCapped")
         from("$buildDir/intermediates/dex/${variant.name}/mergeDex$variantCapped/classes.dex")
         rename("classes.dex", "loader.dex")
         into("${rootProject.projectDir}/out/assets/${variant.name}/lspatch")
     }
 
-    task<Copy>("copySo$variantCapped") {
+    tasks.register("copySo$variantCapped", Copy::class) {
         dependsOn("assemble$variantCapped")
         dependsOn("strip${variantCapped}DebugSymbols")
         val libDir = variant.name + "/strip${variantCapped}DebugSymbols"
@@ -51,7 +51,7 @@ androidComponents.onVariants { variant ->
         into("${rootProject.projectDir}/out/assets/${variant.name}/lspatch/so")
     }
 
-    task("copy$variantCapped") {
+    tasks.register("copy$variantCapped") {
         dependsOn("copySo$variantCapped")
         dependsOn("copyDex$variantCapped")
 

@@ -15,7 +15,7 @@ java {
     targetCompatibility = androidTargetCompatibility
 }
 
-val generateTask = task<Copy>("generateJava") {
+val generateTask = tasks.register("generateJava", Copy::class) {
     val template = mapOf(
         "apiCode" to apiCode,
         "verCode" to verCode,

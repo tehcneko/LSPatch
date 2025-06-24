@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.result.ResultBackNavigator
 import kotlinx.parcelize.Parcelize
 import org.lsposed.lspatch.R
@@ -39,7 +40,7 @@ sealed class SelectAppsResult : Parcelable {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun SelectAppsScreen(
     navigator: ResultBackNavigator<SelectAppsResult>,
@@ -126,7 +127,7 @@ private fun SingleSelect(onSelect: (AppInfo) -> Unit) {
         ) {
             AppItem(
                 modifier = Modifier
-                    .animateItemPlacement(spring(stiffness = Spring.StiffnessLow))
+                    .animateItem(spring(stiffness = Spring.StiffnessLow))
                     .clickable { onSelect(it) },
                 icon = LSPPackageManager.getIcon(it),
                 label = it.label,
@@ -148,7 +149,7 @@ private fun MultiSelect() {
             val checked = viewModel.multiSelected.contains(it)
             AppItem(
                 modifier = Modifier
-                    .animateItemPlacement(spring(stiffness = Spring.StiffnessLow))
+                    .animateItem(spring(stiffness = Spring.StiffnessLow))
                     .clickable {
                         if (checked) viewModel.multiSelected.remove(it)
                         else viewModel.multiSelected.add(it)

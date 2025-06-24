@@ -22,7 +22,7 @@ androidComponents.onVariants { variant ->
     val variantCapped = variant.name.replaceFirstChar { it.uppercase() }
     val variantLowered = variant.name.lowercase()
 
-    task<Copy>("copyDex$variantCapped") {
+    tasks.register("copyDex$variantCapped", Copy::class) {
         dependsOn("assemble$variantCapped")
         val dexOutPath = if (variant.buildType == "release")
             "$buildDir/intermediates/dex/$variantLowered/minify${variantCapped}WithR8" else
@@ -32,7 +32,7 @@ androidComponents.onVariants { variant ->
         into("${rootProject.projectDir}/out/assets/${variant.name}/lspatch")
     }
 
-    task("copy$variantCapped") {
+    tasks.register("copy$variantCapped") {
         dependsOn("copyDex$variantCapped")
 
         doLast {

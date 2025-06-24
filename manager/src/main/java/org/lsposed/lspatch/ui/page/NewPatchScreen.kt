@@ -34,6 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.destinations.SelectAppsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.result.NavResult
 import com.ramcosta.composedestinations.result.ResultRecipient
@@ -46,7 +48,6 @@ import org.lsposed.lspatch.ui.component.SelectionColumn
 import org.lsposed.lspatch.ui.component.ShimmerAnimation
 import org.lsposed.lspatch.ui.component.settings.SettingsCheckBox
 import org.lsposed.lspatch.ui.component.settings.SettingsItem
-import org.lsposed.lspatch.ui.page.destinations.SelectAppsScreenDestination
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
 import org.lsposed.lspatch.ui.util.isScrolledToEnd
 import org.lsposed.lspatch.ui.util.lastItemIndex
@@ -64,7 +65,7 @@ const val ACTION_APPLIST = 1
 const val ACTION_INTENT_INSTALL = 2
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun NewPatchScreen(
     navigator: DestinationsNavigator,
@@ -565,7 +566,6 @@ private fun InstallDialog(patchApp: AppInfo, onFinish: (Int, String?) -> Unit) {
                 Text(
                     modifier = Modifier.fillMaxWidth(),
                     text = stringResource(if (installing == 1) R.string.installing else R.string.uninstalling),
-                    fontFamily = FontFamily.Serif,
                     textAlign = TextAlign.Center
                 )
             }

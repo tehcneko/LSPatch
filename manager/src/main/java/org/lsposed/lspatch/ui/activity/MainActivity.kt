@@ -1,10 +1,17 @@
 package org.lsposed.lspatch.ui.activity
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -13,13 +20,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.rememberNavController
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.generated.NavGraphs
+import com.ramcosta.composedestinations.utils.currentDestinationAsState
+import com.ramcosta.composedestinations.utils.startDestination
 import org.lsposed.lspatch.ui.page.BottomBarDestination
-import org.lsposed.lspatch.ui.page.NavGraphs
-import org.lsposed.lspatch.ui.page.appCurrentDestinationAsState
-import org.lsposed.lspatch.ui.page.destinations.Destination
-import org.lsposed.lspatch.ui.page.startAppDestination
 import org.lsposed.lspatch.ui.theme.LSPTheme
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
 
@@ -28,17 +34,23 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
-            val navController = rememberAnimatedNavController()
+            val navController = rememberNavController()
             LSPTheme {
                 val snackbarHostState = remember { SnackbarHostState() }
                 CompositionLocalProvider(LocalSnackbarHost provides snackbarHostState) {
                     Scaffold(
                         bottomBar = { BottomBar(navController) },
-                        snackbarHost = { SnackbarHost(snackbarHostState) }
+                        snackbarHost = { SnackbarHost(snackbarHostState) },
                     ) { innerPadding ->
                         DestinationsNavHost(
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.consumeWindowInsets(innerPadding)
+                                .windowInsetsPadding(WindowInsets.statusBars)
+                                .padding(innerPadding),
                             navGraph = NavGraphs.root,
                             navController = navController
                         )
@@ -51,8 +63,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun BottomBar(navController: NavHostController) {
-    val currentDestination: Destination = navController.appCurrentDestinationAsState().value
-        ?: NavGraphs.root.startAppDestination
+    val currentDestination = navController.currentDestinationAsState().value
+        ?: NavGraphs.root.startDestination
     var topDestination by rememberSaveable { mutableStateOf(currentDestination.route) }
     LaunchedEffect(currentDestination) {
         val queue = navController.currentBackStack.value

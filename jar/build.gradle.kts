@@ -37,10 +37,12 @@ tasks.register<Jar>("buildDebug") {
     dependsOn(":meta-loader:copyDebug")
     dependsOn(":patch-loader:copyDebug")
     configure("debug")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.register<Jar>("buildRelease") {
     dependsOn(":meta-loader:copyRelease")
     dependsOn(":patch-loader:copyRelease")
     configure("release")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

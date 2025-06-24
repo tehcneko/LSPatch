@@ -19,7 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.lsposed.lspatch.R
@@ -40,7 +39,6 @@ fun ModuleManageBody() {
                     if (LSPPackageManager.appList.isEmpty()) stringResource(R.string.manage_loading)
                     else stringResource(R.string.manage_no_modules)
                 },
-                fontFamily = FontFamily.Serif,
                 style = MaterialTheme.typography.headlineSmall
             )
         }
@@ -74,7 +72,6 @@ fun ModuleManageBody() {
                                         append(it.second.api.toString())
                                     },
                                     fontWeight = FontWeight.SemiBold,
-                                    fontFamily = FontFamily.Serif,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }

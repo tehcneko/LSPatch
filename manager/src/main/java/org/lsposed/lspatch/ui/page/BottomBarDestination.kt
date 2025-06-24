@@ -5,9 +5,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.ramcosta.composedestinations.generated.destinations.HomeScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.LogsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ManageScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.RepoScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.SettingsScreenDestination
 import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
 import org.lsposed.lspatch.R
-import org.lsposed.lspatch.ui.page.destinations.*
 
 enum class BottomBarDestination(
     val direction: DirectionDestinationSpec,

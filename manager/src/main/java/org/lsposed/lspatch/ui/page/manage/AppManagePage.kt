@@ -26,13 +26,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ramcosta.composedestinations.generated.destinations.NewPatchScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.SelectAppsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.result.NavResult
 import com.ramcosta.composedestinations.result.ResultRecipient
@@ -51,8 +52,6 @@ import org.lsposed.lspatch.ui.component.LoadingDialog
 import org.lsposed.lspatch.ui.page.ACTION_APPLIST
 import org.lsposed.lspatch.ui.page.ACTION_STORAGE
 import org.lsposed.lspatch.ui.page.SelectAppsResult
-import org.lsposed.lspatch.ui.page.destinations.NewPatchScreenDestination
-import org.lsposed.lspatch.ui.page.destinations.SelectAppsScreenDestination
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
 import org.lsposed.lspatch.ui.viewmodel.manage.AppManageViewModel
 import org.lsposed.lspatch.ui.viewstate.ProcessingState
@@ -79,7 +78,6 @@ fun AppManageBody(
                     if (LSPPackageManager.appList.isEmpty()) stringResource(R.string.manage_loading)
                     else stringResource(R.string.manage_no_apps)
                 },
-                fontFamily = FontFamily.Serif,
                 style = MaterialTheme.typography.headlineSmall
             )
         }
@@ -167,7 +165,6 @@ fun AppManageBody(
                                             else append(it.second.lspConfig.VERSION_CODE.toString())
                                         },
                                         fontWeight = FontWeight.SemiBold,
-                                        fontFamily = FontFamily.Serif,
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     if (canUpdateLoader) {
