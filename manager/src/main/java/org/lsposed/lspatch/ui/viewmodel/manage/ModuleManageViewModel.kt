@@ -23,7 +23,7 @@ class ModuleManageViewModel : ViewModel() {
             if (appInfo.minVersion < 0) return@mapNotNull null
             appInfo to XposedInfo(
                 appInfo.minVersion,
-                    appInfo.description,
+                appInfo.description,
                 emptyList() // TODO: scope
             )
         }.also {

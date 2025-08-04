@@ -20,7 +20,8 @@ class DelegateState<T>(initial: T, private val sideEffectSetter: (T) -> Unit) {
     operator fun component2(): (T) -> Unit = { value = it }
 }
 
-fun <T> delegateStateOf(initial: T, sideEffectSetter: (T) -> Unit) = DelegateState(initial, sideEffectSetter)
+fun <T> delegateStateOf(initial: T, sideEffectSetter: (T) -> Unit) =
+    DelegateState(initial, sideEffectSetter)
 
 @Suppress("NOTHING_TO_INLINE")
 inline operator fun <T> DelegateState<T>.getValue(thisObj: Any?, property: KProperty<*>): T = value

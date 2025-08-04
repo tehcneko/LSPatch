@@ -1,24 +1,33 @@
 package org.lsposed.lspatch.ui.component
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val ShimmerColorShades
     @Composable get() = listOf(
-        MaterialTheme.colorScheme.secondaryContainer.copy(0.9f),
-        MaterialTheme.colorScheme.secondaryContainer.copy(0.2f),
-        MaterialTheme.colorScheme.secondaryContainer.copy(0.9f)
+        MiuixTheme.colorScheme.secondaryContainer.copy(0.9f),
+        MiuixTheme.colorScheme.secondaryContainer.copy(0.2f),
+        MiuixTheme.colorScheme.secondaryContainer.copy(0.9f)
     )
 
 class ShimmerScope(val brush: Brush)

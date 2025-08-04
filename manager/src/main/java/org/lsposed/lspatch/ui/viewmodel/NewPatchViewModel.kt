@@ -92,9 +92,19 @@ class NewPatchViewModel : ViewModel() {
         if (useManager) embeddedModules = emptyList()
         patchOptions = Patcher.Options(
             injectDex = injectDex,
-            config = PatchConfig(useManager, debuggable, overrideVersionCode, sigBypassLevel, null, null),
-            apkPaths = listOf(patchApp.app.sourceDir) + (patchApp.app.splitSourceDirs ?: emptyArray()),
-            embeddedModules = embeddedModules.flatMap { listOf(it.app.sourceDir) + (it.app.splitSourceDirs ?: emptyArray()) }
+            config = PatchConfig(
+                useManager,
+                debuggable,
+                overrideVersionCode,
+                sigBypassLevel,
+                null,
+                null
+            ),
+            apkPaths = listOf(patchApp.app.sourceDir) + (patchApp.app.splitSourceDirs
+                ?: emptyArray()),
+            embeddedModules = embeddedModules.flatMap {
+                listOf(it.app.sourceDir) + (it.app.splitSourceDirs ?: emptyArray())
+            }
         )
         patchState = PatchState.PATCHING
     }

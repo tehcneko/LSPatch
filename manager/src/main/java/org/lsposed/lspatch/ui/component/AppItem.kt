@@ -1,14 +1,21 @@
 package org.lsposed.lspatch.ui.component
 
 import android.graphics.drawable.GradientDrawable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import org.lsposed.lspatch.ui.theme.LSPTheme
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.interfaces.HoldDownInteraction
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun AppItem(
@@ -30,16 +42,45 @@ fun AppItem(
     checked: Boolean? = null,
     rightIcon: (@Composable () -> Unit)? = null,
     additionalContent: (@Composable ColumnScope.() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    holdDownState: Boolean = false,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     if (checked != null && rightIcon != null)
         throw IllegalArgumentException("`checked` and `rightIcon` should not be both set")
+
+    val holdDown = remember { mutableStateOf<HoldDownInteraction.HoldDown?>(null) }
+    val currentOnClick by rememberUpdatedState(onClick)
+
+    LaunchedEffect(holdDownState) {
+        if (holdDownState) {
+            val interaction = HoldDownInteraction.HoldDown()
+            holdDown.value = interaction
+            interactionSource.emit(interaction)
+        } else {
+            holdDown.value?.let { oldValue ->
+                interactionSource.emit(HoldDownInteraction.Release(oldValue))
+                holdDown.value = null
+            }
+        }
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(20.dp)
+            .then(
+                if (currentOnClick != null && enabled) {
+                    Modifier.clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = interactionSource,
+                        onClick = { currentOnClick?.invoke() }
+                    )
+                } else Modifier
+            )
+            .padding(12.dp)
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -49,13 +90,12 @@ fun AppItem(
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
                 Text(label)
                 Text(
                     text = packageName,
                     fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MiuixTheme.textStyles.body2
                 )
                 additionalContent?.invoke(this)
             }
@@ -63,7 +103,7 @@ fun AppItem(
                 Checkbox(
                     checked = checked,
                     onCheckedChange = null,
-                    modifier = Modifier.padding(start = 20.dp)
+                    modifier = Modifier.padding(start = 12.dp)
                 )
             }
             if (rightIcon != null) {
@@ -79,12 +119,11 @@ private fun AppItemPreview() {
     LSPTheme {
         val shape = GradientDrawable()
         shape.shape = GradientDrawable.RECTANGLE
-        shape.setColor(MaterialTheme.colorScheme.primary.toArgb())
+        shape.setColor(MiuixTheme.colorScheme.primary.toArgb())
         AppItem(
             icon = shape.toBitmap().asImageBitmap(),
             label = "Sample App",
             packageName = "org.lsposed.sample",
-            rightIcon = { Icon(Icons.Filled.ArrowForwardIos, null) }
         )
     }
 }

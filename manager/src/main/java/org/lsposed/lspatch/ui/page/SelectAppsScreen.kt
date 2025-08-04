@@ -3,35 +3,69 @@ package org.lsposed.lspatch.ui.page
 import android.content.pm.ApplicationInfo
 import android.os.Parcelable
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toLowerCase
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.result.ResultBackNavigator
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.parcelize.Parcelize
 import org.lsposed.lspatch.R
+import org.lsposed.lspatch.ui.activity.LocalBottomBarHeight
+import org.lsposed.lspatch.ui.activity.LocalBottomHazeState
 import org.lsposed.lspatch.ui.component.AppItem
-import org.lsposed.lspatch.ui.component.SearchAppBar
+import org.lsposed.lspatch.ui.component.ListCard
 import org.lsposed.lspatch.ui.viewmodel.SelectAppsViewModel
 import org.lsposed.lspatch.util.LSPPackageManager
 import org.lsposed.lspatch.util.LSPPackageManager.AppInfo
+import top.yukonga.miuix.kmp.basic.FloatingActionButton
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InputField
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PullToRefresh
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
+import top.yukonga.miuix.kmp.basic.SearchBar
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.useful.Back
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 @Parcelize
 sealed class SelectAppsResult : Parcelable {
@@ -39,7 +73,6 @@ sealed class SelectAppsResult : Parcelable {
     data class MultipleApps(val selected: List<AppInfo>) : SelectAppsResult()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
 @Composable
 fun SelectAppsScreen(
@@ -52,7 +85,8 @@ fun SelectAppsScreen(
     var searchPackage by remember { mutableStateOf("") }
     val filter: (AppInfo) -> Boolean = {
         val packageLowerCase = searchPackage.toLowerCase(Locale.current)
-        val contains = it.label.toLowerCase(Locale.current).contains(packageLowerCase) || it.app.packageName.contains(packageLowerCase)
+        val contains = it.label.toLowerCase(Locale.current)
+            .contains(packageLowerCase) || it.app.packageName.contains(packageLowerCase)
         if (multiSelect) contains && it.isXposedModule
         else contains && it.app.flags and ApplicationInfo.FLAG_SYSTEM == 0
     }
@@ -69,41 +103,100 @@ fun SelectAppsScreen(
         navigator.navigateBack()
     }
 
+    var expanded by remember { mutableStateOf(false) }
+
+    val scrollBehavior = MiuixScrollBehavior()
+    val hazeState = rememberHazeState()
+    val hazeStyle = HazeStyle(
+        backgroundColor = MiuixTheme.colorScheme.background,
+        tint = HazeTint(
+            MiuixTheme.colorScheme.background.copy(
+                if (scrollBehavior.state.collapsedFraction <= 0f) 1f
+                else lerp(1f, 0.67f, (scrollBehavior.state.collapsedFraction))
+            )
+        )
+    )
     Scaffold(
         topBar = {
-            SearchAppBar(
-                title = { Text(stringResource(R.string.screen_select_apps)) },
-                searchText = searchPackage,
-                onSearchTextChange = {
-                    searchPackage = it
-                    viewModel.filterAppList(false, filter)
-                },
-                onClearClick = {
-                    searchPackage = ""
-                    viewModel.filterAppList(false, filter)
-                },
-                onBackClick = {
-                    navigator.navigateBack()
+            Column(
+                modifier = Modifier
+                    .hazeEffect(hazeState) {
+                        style = hazeStyle
+                        blurRadius = 25.dp
+                        noiseFactor = 0f
+                    }
+            ) {
+                TopAppBar(
+                    title = stringResource(R.string.screen_select_apps),
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        IconButton(
+                            modifier = Modifier.padding(start = 20.dp),
+                            onClick = { navigator.navigateBack() }
+                        ) {
+                            Icon(
+                                imageVector = MiuixIcons.Useful.Back,
+                                contentDescription = "Back",
+                            )
+                        }
+                    },
+                    color = Color.Unspecified
+                )
+                SearchBar(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    inputField = {
+                        InputField(
+                            query = searchPackage,
+                            onQueryChange = {
+                                searchPackage = it
+                            },
+                            onSearch = { viewModel.filterAppList(false, filter) },
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it }
+                        )
+                    },
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
                 }
-            )
+            }
         },
         floatingActionButton = {
-            if (multiSelect) MultiSelectFab {
-                navigator.navigateBack(SelectAppsResult.MultipleApps(viewModel.multiSelected))
+            AnimatedVisibility(
+                modifier = Modifier
+                    .padding(bottom = LocalBottomBarHeight.current.value),
+                visible = multiSelect,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                MultiSelectFab {
+                    navigator.navigateBack(SelectAppsResult.MultipleApps(viewModel.multiSelected))
+                }
             }
-        }
+        },
+        popupHost = {},
     ) { innerPadding ->
-        SwipeRefresh(
-            state = rememberSwipeRefreshState(viewModel.isRefreshing),
+        PullToRefresh(
+            isRefreshing = viewModel.isRefreshing,
             onRefresh = { viewModel.filterAppList(true, filter) },
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
+                .imePadding()
+                .fillMaxSize(),
+            contentPadding = innerPadding
         ) {
-            if (multiSelect) MultiSelect()
-            else SingleSelect {
-                navigator.navigateBack(SelectAppsResult.SingleApp(it))
-            }
+            if (multiSelect) MultiSelect(
+                scrollBehavior,
+                innerPadding,
+                hazeState
+            )
+            else SingleSelect(
+                onSelect = {
+                    navigator.navigateBack(SelectAppsResult.SingleApp(it))
+                },
+                scrollBehavior,
+                innerPadding,
+                hazeState
+            )
         }
     }
 }
@@ -112,53 +205,103 @@ fun SelectAppsScreen(
 private fun MultiSelectFab(onClick: () -> Unit) {
     FloatingActionButton(
         onClick = onClick,
-        content = { Icon(Icons.Outlined.Done, stringResource(R.string.add)) }
-    )
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Done,
+            contentDescription = stringResource(R.string.add),
+            tint = MiuixTheme.colorScheme.onPrimaryContainer,
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SingleSelect(onSelect: (AppInfo) -> Unit) {
+private fun SingleSelect(
+    onSelect: (AppInfo) -> Unit,
+    scrollBehavior: ScrollBehavior,
+    padding: PaddingValues,
+    hazeState: HazeState,
+) {
     val viewModel = viewModel<SelectAppsViewModel>()
-    LazyColumn {
-        items(
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .overScrollVertical()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .hazeSource(state = hazeState)
+            .hazeSource(state = LocalBottomHazeState.current),
+        contentPadding = PaddingValues(
+            top = padding.calculateTopPadding(),
+            bottom = LocalBottomBarHeight.current.value + 12.dp,
+            start = 12.dp,
+            end = 12.dp
+        ),
+    ) {
+        itemsIndexed(
             items = viewModel.filteredList,
-            key = { it.app.packageName }
-        ) {
-            AppItem(
-                modifier = Modifier
-                    .animateItem(spring(stiffness = Spring.StiffnessLow))
-                    .clickable { onSelect(it) },
-                icon = LSPPackageManager.getIcon(it),
-                label = it.label,
-                packageName = it.app.packageName
-            )
+            key = { index, item -> item.app.packageName }
+        ) { index, item ->
+            ListCard(
+                index = index,
+                size = viewModel.filteredList.size
+            ) {
+                AppItem(
+                    modifier = Modifier
+                        .animateItem(spring(stiffness = Spring.StiffnessLow))
+                        .clickable { onSelect(item) },
+                    icon = LSPPackageManager.getIcon(item),
+                    label = item.label,
+                    packageName = item.app.packageName
+                )
+            }
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MultiSelect() {
+private fun MultiSelect(
+    scrollBehavior: ScrollBehavior,
+    padding: PaddingValues,
+    hazeState: HazeState,
+) {
     val viewModel = viewModel<SelectAppsViewModel>()
-    LazyColumn {
-        items(
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .overScrollVertical()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .hazeSource(state = hazeState)
+            .hazeSource(state = LocalBottomHazeState.current),
+        contentPadding = PaddingValues(
+            top = padding.calculateTopPadding(),
+            bottom = LocalBottomBarHeight.current.value + 12.dp,
+            start = 12.dp,
+            end = 12.dp
+        ),
+    ) {
+        itemsIndexed(
             items = viewModel.filteredList,
-            key = { it.app.packageName }
-        ) {
-            val checked = viewModel.multiSelected.contains(it)
-            AppItem(
-                modifier = Modifier
-                    .animateItem(spring(stiffness = Spring.StiffnessLow))
-                    .clickable {
-                        if (checked) viewModel.multiSelected.remove(it)
-                        else viewModel.multiSelected.add(it)
-                    },
-                icon = LSPPackageManager.getIcon(it),
-                label = it.label,
-                packageName = it.app.packageName,
-                checked = checked
-            )
+            key = { index, item -> item.app.packageName }
+        ) { index, item ->
+            ListCard(
+                index = index,
+                size = viewModel.filteredList.size
+            ) {
+                val checked = viewModel.multiSelected.contains(item)
+                AppItem(
+                    modifier = Modifier
+                        .animateItem(spring(stiffness = Spring.StiffnessLow))
+                        .clickable {
+                            if (checked) viewModel.multiSelected.remove(item)
+                            else viewModel.multiSelected.add(item)
+                        },
+                    icon = LSPPackageManager.getIcon(item),
+                    label = item.label,
+                    packageName = item.app.packageName,
+                    checked = checked
+                )
+            }
         }
     }
 }

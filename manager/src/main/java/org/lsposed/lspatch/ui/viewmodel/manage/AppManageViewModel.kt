@@ -87,7 +87,8 @@ class AppManageViewModel : ViewModel() {
         val result = runCatching {
             withContext(Dispatchers.IO) {
                 LSPPackageManager.cleanTmpApkDir()
-                val apkPaths = listOf(appInfo.app.sourceDir) + (appInfo.app.splitSourceDirs ?: emptyArray())
+                val apkPaths =
+                    listOf(appInfo.app.sourceDir) + (appInfo.app.splitSourceDirs ?: emptyArray())
                 val patchPaths = mutableListOf<String>()
                 val embeddedModulePaths = mutableListOf<String>()
                 for (apk in apkPaths) {
@@ -117,7 +118,10 @@ class AppManageViewModel : ViewModel() {
                         }
                     }
                 }
-                Patcher.patch(logger, Patcher.Options(false, config, patchPaths, embeddedModulePaths))
+                Patcher.patch(
+                    logger,
+                    Patcher.Options(false, config, patchPaths, embeddedModulePaths)
+                )
                 val (status, message) = LSPPackageManager.install()
                 if (status != PackageInstaller.STATUS_SUCCESS) throw RuntimeException(message)
             }
