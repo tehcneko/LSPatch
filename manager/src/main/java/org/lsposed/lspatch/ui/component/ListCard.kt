@@ -61,7 +61,7 @@ fun ListCard(
     }
     Box(
         modifier = modifier
-            .background(color = CardDefaults.defaultColor(), shape = shape)
+            .background(color = CardDefaults.defaultColors().color, shape = shape)
             .clip(clipShape),
     ) {
         content()

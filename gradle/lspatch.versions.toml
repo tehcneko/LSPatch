@@ -11,7 +11,7 @@ ksp = "2.2.0-2.0.2"
 commons-io = "2.20.0"
 beust-jcommander = "1.82"
 google-gson = "2.13.1"
-miuix = "0.4.9"
+miuix = "0.5.0"
 motion = "2.0.1"
 haze = "1.6.9"
 
