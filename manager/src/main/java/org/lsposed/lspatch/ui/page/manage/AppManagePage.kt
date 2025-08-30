@@ -8,18 +8,26 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,11 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -53,6 +61,7 @@ import com.ramcosta.composedestinations.generated.destinations.SelectAppsScreenD
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.result.NavResult
 import com.ramcosta.composedestinations.result.ResultRecipient
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import org.lsposed.lspatch.BuildConfig
@@ -63,21 +72,18 @@ import org.lsposed.lspatch.database.entity.Module
 import org.lsposed.lspatch.lspApp
 import org.lsposed.lspatch.share.Constants
 import org.lsposed.lspatch.share.LSPConfig
-import org.lsposed.lspatch.ui.activity.LocalBottomBarHeight
-import org.lsposed.lspatch.ui.activity.LocalBottomHazeState
 import org.lsposed.lspatch.ui.component.AppItem
 import org.lsposed.lspatch.ui.component.ListCard
 import org.lsposed.lspatch.ui.component.LoadingDialog
+import org.lsposed.lspatch.ui.component.StatusTag
 import org.lsposed.lspatch.ui.page.ACTION_APPLIST
 import org.lsposed.lspatch.ui.page.ACTION_STORAGE
-import org.lsposed.lspatch.ui.page.LocalHazeState
 import org.lsposed.lspatch.ui.page.SelectAppsResult
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
 import org.lsposed.lspatch.ui.viewmodel.manage.AppManageViewModel
 import org.lsposed.lspatch.ui.viewstate.ProcessingState
 import org.lsposed.lspatch.util.LSPPackageManager
 import org.lsposed.lspatch.util.ShizukuApi
-import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
@@ -89,12 +95,15 @@ import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.extra.DropdownImpl
+import top.yukonga.miuix.kmp.extra.SuperArrow
 import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.New
 import top.yukonga.miuix.kmp.icon.icons.useful.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.utils.getWindowSize
 import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import java.io.IOException
 
 private const val TAG = "AppManagePage"
@@ -102,9 +111,11 @@ private const val TAG = "AppManagePage"
 @Composable
 fun AppManageBody(
     navigator: DestinationsNavigator,
+    bottomInnerPadding: Dp,
     resultRecipient: ResultRecipient<SelectAppsScreenDestination, SelectAppsResult>,
     scrollBehavior: ScrollBehavior,
-    padding: PaddingValues,
+    innerPadding: PaddingValues,
+    hazeState: HazeState,
 ) {
     val viewModel = viewModel<AppManageViewModel>()
     val snackbarHost = LocalSnackbarHost.current
@@ -178,19 +189,21 @@ fun AppManageBody(
             }
         }
 
+        val layoutDirection = LocalLayoutDirection.current
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight()
+                .height(getWindowSize().height.dp)
+                .scrollEndHaptic()
                 .overScrollVertical()
+                .scrollEndHaptic()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .hazeSource(state = LocalHazeState.current)
-                .hazeSource(state = LocalBottomHazeState.current),
+                .hazeSource(hazeState),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
-                bottom = LocalBottomBarHeight.current.value + 12.dp,
-                start = 12.dp,
-                end = 12.dp
+                top = innerPadding.calculateTopPadding(),
+                start = innerPadding.calculateStartPadding(layoutDirection) + 12.dp,
+                end = innerPadding.calculateEndPadding(layoutDirection) + 12.dp
             ),
+            overscrollEffect = null,
         ) {
             itemsIndexed(
                 items = viewModel.appList,
@@ -215,28 +228,42 @@ fun AppManageBody(
                         packageName = item.first.app.packageName,
                         additionalContent = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = buildAnnotatedString {
-                                        val (text, color) =
-                                            if (item.second.useManager) stringResource(R.string.patch_local) to MiuixTheme.colorScheme.primary
-                                            else stringResource(R.string.patch_integrated) to MiuixTheme.colorScheme.primary
-                                        append(AnnotatedString(text, SpanStyle(color = color)))
-                                        append("  ")
-                                        if (isRolling) append(stringResource(R.string.manage_rolling))
-                                        else append(item.second.lspConfig.VERSION_CODE.toString())
-                                    },
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MiuixTheme.textStyles.body2
-                                )
+                                if (item.second.useManager)
+                                    StatusTag(
+                                        label = stringResource(R.string.patch_local),
+                                        backgroundColor = colorScheme.tertiaryContainer,
+                                        contentColor = colorScheme.onTertiaryContainer
+                                    ) else
+                                    StatusTag(
+                                        label = stringResource(R.string.patch_integrated),
+                                        backgroundColor = colorScheme.primaryContainer,
+                                        contentColor = colorScheme.onPrimaryContainer
+                                    )
+                                Box(modifier = Modifier.padding(start = 2.dp)) {
+                                    if (isRolling)
+                                        StatusTag(
+                                            label = stringResource(R.string.manage_rolling),
+                                            backgroundColor = colorScheme.tertiaryContainer,
+                                            contentColor = colorScheme.onTertiaryContainer
+                                        ) else
+                                        StatusTag(
+                                            label = item.second.lspConfig.VERSION_CODE.toString(),
+                                            backgroundColor = colorScheme.tertiaryContainer,
+                                            contentColor = colorScheme.onTertiaryContainer
+                                        )
+                                }
                                 if (canUpdateLoader) {
                                     with(LocalDensity.current) {
-                                        val size =
-                                            MiuixTheme.textStyles.body2.fontSize * 1.2
-                                        Icon(
-                                            MiuixIcons.Useful.Update,
-                                            null,
-                                            Modifier.size(size.toDp())
-                                        )
+                                        Box(modifier = Modifier.padding(start = 2.dp)) {
+                                            val size =
+                                                MiuixTheme.textStyles.body2.fontSize * 1.2
+                                            Icon(
+                                                MiuixIcons.Useful.Update,
+                                                null,
+                                                Modifier.size(size.toDp()),
+                                                tint = colorScheme.primary
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -371,12 +398,16 @@ fun AppManageBody(
                     }
                 }
             }
+
+            item {
+                Spacer(Modifier.height(bottomInnerPadding + 12.dp))
+            }
         }
     }
 }
 
 @Composable
-fun AppManageFab(navigator: DestinationsNavigator) {
+fun AppManageFab(modifier: Modifier, navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val snackbarHost = LocalSnackbarHost.current
     val scope = rememberCoroutineScope()
@@ -434,43 +465,69 @@ fun AppManageFab(navigator: DestinationsNavigator) {
         SuperDialog(
             show = showNewPatchDialog,
             onDismissRequest = { showNewPatchDialog.value = false },
-            title = stringResource(R.string.screen_new_patch),
-            insideMargin = DpSize(0.dp, 24.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                BasicComponent(
-                    insideMargin = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    title = stringResource(R.string.patch_from_storage),
+            insideMargin = DpSize(0.dp, 0.dp),
+            content = {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp, bottom = 12.dp),
+                    text = stringResource(R.string.screen_new_patch),
+                    fontSize = MiuixTheme.textStyles.title4.fontSize,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    color = colorScheme.onSurface
+                )
+                SuperArrow(
                     onClick = {
                         navigator.navigate(NewPatchScreenDestination(id = ACTION_STORAGE))
                         showNewPatchDialog.value = false
-                    }
+                    },
+                    title = stringResource(R.string.patch_from_storage),
+                    leftAction = {
+                        Icon(
+                            imageVector = Icons.Rounded.Storage,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 16.dp),
+                            tint = colorScheme.onSurface
+                        )
+                    },
+                    insideMargin = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                 )
-                BasicComponent(
-                    insideMargin = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    title = stringResource(R.string.patch_from_applist),
+                SuperArrow(
                     onClick = {
                         navigator.navigate(NewPatchScreenDestination(id = ACTION_APPLIST))
                         showNewPatchDialog.value = false
-                    }
+                    },
+                    title = stringResource(R.string.patch_from_applist),
+                    leftAction = {
+                        Icon(
+                            imageVector = Icons.Rounded.Apps,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 16.dp),
+                            tint = colorScheme.onSurface
+                        )
+                    },
+                    insideMargin = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                )
+
+                TextButton(
+                    text = stringResource(id = android.R.string.cancel),
+                    onClick = {
+                        showNewPatchDialog.value = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 24.dp)
+                        .padding(horizontal = 24.dp)
                 )
             }
-            TextButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                text = stringResource(android.R.string.cancel),
-                onClick = { showNewPatchDialog.value = false }
-            )
-        }
+        )
     }
 
     FloatingActionButton(
+        modifier = modifier
+            .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), CircleShape),
+        shadowElevation = 0.dp,
         onClick = {
             val uri = Configs.storageDirectory?.toUri()
             if (uri == null) {
@@ -494,9 +551,10 @@ fun AppManageFab(navigator: DestinationsNavigator) {
         }
     ) {
         Icon(
-            imageVector = MiuixIcons.Useful.New,
+            imageVector = Icons.Rounded.Add,
             contentDescription = stringResource(R.string.screen_new_patch),
-            tint = MiuixTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(40.dp),
+            tint = colorScheme.onPrimaryContainer,
         )
     }
 }

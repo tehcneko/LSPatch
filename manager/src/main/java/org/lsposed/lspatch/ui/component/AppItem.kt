@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
@@ -91,11 +92,18 @@ fun AppItem(
             Column(
                 modifier = Modifier.weight(1f),
             ) {
-                Text(label)
+                Text(
+                    color = MiuixTheme.colorScheme.onSurface,
+                    text = label,
+                    fontSize = MiuixTheme.textStyles.headline1.fontSize,
+                    fontWeight = FontWeight.Medium,
+                )
                 Text(
                     text = packageName,
+                    fontSize = MiuixTheme.textStyles.body2.fontSize,
                     fontFamily = FontFamily.Monospace,
-                    style = MiuixTheme.textStyles.body2
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 additionalContent?.invoke(this)
             }
@@ -103,7 +111,6 @@ fun AppItem(
                 Checkbox(
                     checked = checked,
                     onCheckedChange = null,
-                    modifier = Modifier.padding(start = 12.dp)
                 )
             }
             if (rightIcon != null) {

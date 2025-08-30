@@ -9,16 +9,27 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toLowerCase
@@ -45,8 +57,6 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.parcelize.Parcelize
 import org.lsposed.lspatch.R
-import org.lsposed.lspatch.ui.activity.LocalBottomBarHeight
-import org.lsposed.lspatch.ui.activity.LocalBottomHazeState
 import org.lsposed.lspatch.ui.component.AppItem
 import org.lsposed.lspatch.ui.component.ListCard
 import org.lsposed.lspatch.ui.viewmodel.SelectAppsViewModel
@@ -64,8 +74,10 @@ import top.yukonga.miuix.kmp.basic.SearchBar
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Back
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.utils.getWindowSize
 import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Parcelize
 sealed class SelectAppsResult : Parcelable {
@@ -108,9 +120,9 @@ fun SelectAppsScreen(
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
+        backgroundColor = colorScheme.background,
         tint = HazeTint(
-            MiuixTheme.colorScheme.background.copy(
+            colorScheme.background.copy(
                 if (scrollBehavior.state.collapsedFraction <= 0f) 1f
                 else lerp(1f, 0.67f, (scrollBehavior.state.collapsedFraction))
             )
@@ -164,7 +176,7 @@ fun SelectAppsScreen(
         floatingActionButton = {
             AnimatedVisibility(
                 modifier = Modifier
-                    .padding(bottom = LocalBottomBarHeight.current.value),
+                    .padding(bottom = 20.dp, end = 20.dp),
                 visible = multiSelect,
                 enter = fadeIn(),
                 exit = fadeOut()
@@ -175,19 +187,24 @@ fun SelectAppsScreen(
             }
         },
         popupHost = {},
+        contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(
+            WindowInsetsSides.Horizontal
+        )
     ) { innerPadding ->
+        val layoutDirection = LocalLayoutDirection.current
         PullToRefresh(
             isRefreshing = viewModel.isRefreshing,
             onRefresh = { viewModel.filterAppList(true, filter) },
-            modifier = Modifier
-                .imePadding()
-                .fillMaxSize(),
-            contentPadding = innerPadding
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding() + 6.dp,
+                start = innerPadding.calculateStartPadding(layoutDirection),
+                end = innerPadding.calculateEndPadding(layoutDirection)
+            ),
         ) {
             if (multiSelect) MultiSelect(
                 scrollBehavior,
                 innerPadding,
-                hazeState
+                hazeState,
             )
             else SingleSelect(
                 onSelect = {
@@ -195,7 +212,7 @@ fun SelectAppsScreen(
                 },
                 scrollBehavior,
                 innerPadding,
-                hazeState
+                hazeState,
             )
         }
     }
@@ -204,12 +221,15 @@ fun SelectAppsScreen(
 @Composable
 private fun MultiSelectFab(onClick: () -> Unit) {
     FloatingActionButton(
+        modifier = Modifier
+            .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), CircleShape),
+        shadowElevation = 0.dp,
         onClick = onClick,
     ) {
         Icon(
-            imageVector = Icons.Outlined.Done,
+            imageVector = Icons.Rounded.Done,
             contentDescription = stringResource(R.string.add),
-            tint = MiuixTheme.colorScheme.onPrimaryContainer,
+            tint = colorScheme.onPrimaryContainer,
         )
     }
 }
@@ -219,23 +239,25 @@ private fun MultiSelectFab(onClick: () -> Unit) {
 private fun SingleSelect(
     onSelect: (AppInfo) -> Unit,
     scrollBehavior: ScrollBehavior,
-    padding: PaddingValues,
+    innerPadding: PaddingValues,
     hazeState: HazeState,
 ) {
     val viewModel = viewModel<SelectAppsViewModel>()
+    val layoutDirection = LocalLayoutDirection.current
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .height(getWindowSize().height.dp)
+            .scrollEndHaptic()
             .overScrollVertical()
+            .scrollEndHaptic()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .hazeSource(state = hazeState)
-            .hazeSource(state = LocalBottomHazeState.current),
+            .hazeSource(hazeState),
         contentPadding = PaddingValues(
-            top = padding.calculateTopPadding(),
-            bottom = LocalBottomBarHeight.current.value + 12.dp,
-            start = 12.dp,
-            end = 12.dp
+            top = innerPadding.calculateTopPadding() + 6.dp,
+            start = innerPadding.calculateStartPadding(layoutDirection) + 12.dp,
+            end = innerPadding.calculateEndPadding(layoutDirection) + 12.dp
         ),
+        overscrollEffect = null,
     ) {
         itemsIndexed(
             items = viewModel.filteredList,
@@ -255,6 +277,10 @@ private fun SingleSelect(
                 )
             }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+        }
     }
 }
 
@@ -262,23 +288,25 @@ private fun SingleSelect(
 @Composable
 private fun MultiSelect(
     scrollBehavior: ScrollBehavior,
-    padding: PaddingValues,
+    innerPadding: PaddingValues,
     hazeState: HazeState,
 ) {
     val viewModel = viewModel<SelectAppsViewModel>()
+    val layoutDirection = LocalLayoutDirection.current
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .height(getWindowSize().height.dp)
+            .scrollEndHaptic()
             .overScrollVertical()
+            .scrollEndHaptic()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .hazeSource(state = hazeState)
-            .hazeSource(state = LocalBottomHazeState.current),
+            .hazeSource(hazeState),
         contentPadding = PaddingValues(
-            top = padding.calculateTopPadding(),
-            bottom = LocalBottomBarHeight.current.value + 12.dp,
-            start = 12.dp,
-            end = 12.dp
+            top = innerPadding.calculateTopPadding() + 6.dp,
+            start = innerPadding.calculateStartPadding(layoutDirection) + 12.dp,
+            end = innerPadding.calculateEndPadding(layoutDirection) + 12.dp
         ),
+        overscrollEffect = null,
     ) {
         itemsIndexed(
             items = viewModel.filteredList,
@@ -302,6 +330,10 @@ private fun MultiSelect(
                     checked = checked
                 )
             }
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp + 20.dp))
         }
     }
 }

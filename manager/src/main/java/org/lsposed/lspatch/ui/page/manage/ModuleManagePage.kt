@@ -5,8 +5,11 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -16,24 +19,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.lsposed.lspatch.R
-import org.lsposed.lspatch.ui.activity.LocalBottomBarHeight
-import org.lsposed.lspatch.ui.activity.LocalBottomHazeState
 import org.lsposed.lspatch.ui.component.AppItem
 import org.lsposed.lspatch.ui.component.ListCard
-import org.lsposed.lspatch.ui.page.LocalHazeState
+import org.lsposed.lspatch.ui.component.StatusTag
 import org.lsposed.lspatch.ui.viewmodel.manage.ModuleManageViewModel
 import org.lsposed.lspatch.util.LSPPackageManager
 import top.yukonga.miuix.kmp.basic.ListPopup
@@ -44,12 +44,17 @@ import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.extra.DropdownImpl
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.utils.getWindowSize
 import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun ModuleManageBody(
+    bottomInnerPadding: Dp,
     scrollBehavior: ScrollBehavior,
-    padding: PaddingValues,
+    innerPadding: PaddingValues,
+    hazeState: HazeState,
 ) {
     val context = LocalContext.current
     val viewModel = viewModel<ModuleManageViewModel>()
@@ -65,19 +70,21 @@ fun ModuleManageBody(
             )
         }
     } else {
+        val layoutDirection = LocalLayoutDirection.current
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight()
+                .height(getWindowSize().height.dp)
+                .scrollEndHaptic()
                 .overScrollVertical()
+                .scrollEndHaptic()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .hazeSource(state = LocalHazeState.current)
-                .hazeSource(state = LocalBottomHazeState.current),
+                .hazeSource(hazeState),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
-                bottom = LocalBottomBarHeight.current.value + 12.dp,
-                start = 12.dp,
-                end = 12.dp
+                top = innerPadding.calculateTopPadding() + 6.dp,
+                start = innerPadding.calculateStartPadding(layoutDirection) + 12.dp,
+                end = innerPadding.calculateEndPadding(layoutDirection) + 12.dp
             ),
+            overscrollEffect = null,
         ) {
             itemsIndexed(
                 items = viewModel.appList,
@@ -101,21 +108,13 @@ fun ModuleManageBody(
                         additionalContent = {
                             Text(
                                 text = item.second.description,
-                                style = MiuixTheme.textStyles.body2
+                                fontSize = MiuixTheme.textStyles.body2.fontSize,
+                                color = colorScheme.onSurfaceVariantSummary,
                             )
-                            Text(
-                                text = buildAnnotatedString {
-                                    append(
-                                        AnnotatedString(
-                                            "API",
-                                            SpanStyle(color = MiuixTheme.colorScheme.primary)
-                                        )
-                                    )
-                                    append("  ")
-                                    append(item.second.api.toString())
-                                },
-                                fontWeight = FontWeight.SemiBold,
-                                style = MiuixTheme.textStyles.body2
+                            StatusTag(
+                                label = "API " + item.second.api.toString(),
+                                backgroundColor = colorScheme.tertiaryContainer,
+                                contentColor = colorScheme.onTertiaryContainer
                             )
                         }
                     )
@@ -177,6 +176,10 @@ fun ModuleManageBody(
                         }
                     }
                 }
+            }
+
+            item {
+                Spacer(Modifier.height(bottomInnerPadding + 12.dp))
             }
         }
     }

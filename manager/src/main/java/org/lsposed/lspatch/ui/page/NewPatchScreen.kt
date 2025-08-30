@@ -19,23 +19,35 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,8 +61,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -70,8 +85,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.lsposed.lspatch.R
 import org.lsposed.lspatch.lspApp
-import org.lsposed.lspatch.ui.activity.LocalBottomBarHeight
-import org.lsposed.lspatch.ui.activity.LocalBottomHazeState
 import org.lsposed.lspatch.ui.component.LoadingDialog
 import org.lsposed.lspatch.ui.component.ShimmerAnimation
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
@@ -104,10 +117,12 @@ import top.yukonga.miuix.kmp.extra.SuperSpinner
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Back
-import top.yukonga.miuix.kmp.icon.icons.useful.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.SmoothRoundedCornerShape
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.utils.G2RoundedCornerShape
+import top.yukonga.miuix.kmp.utils.getWindowSize
 import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 private const val TAG = "NewPatchPage"
 
@@ -244,26 +259,35 @@ fun NewPatchScreen(
                 SuperDialog(
                     show = showSelectModuleDialog,
                     onDismissRequest = { showSelectModuleDialog.value = false },
-                    title = stringResource(R.string.patch_embed_modules),
-                    insideMargin = DpSize(0.dp, 24.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(bottom = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        BasicComponent(
-                            insideMargin = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            title = stringResource(R.string.patch_from_storage),
+                    insideMargin = DpSize(0.dp, 0.dp),
+                    content = {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp, bottom = 12.dp),
+                            text = stringResource(R.string.patch_embed_modules),
+                            fontSize = MiuixTheme.textStyles.title4.fontSize,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            color = colorScheme.onSurface
+                        )
+                        SuperArrow(
                             onClick = {
                                 storageModuleLauncher.launch(arrayOf("application/vnd.android.package-archive"))
                                 showSelectModuleDialog.value = false
-                            }
+                            },
+                            title = stringResource(R.string.patch_from_storage),
+                            leftAction = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Storage,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 16.dp),
+                                    tint = colorScheme.onSurface
+                                )
+                            },
+                            insideMargin = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                         )
-                        BasicComponent(
-                            insideMargin = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            title = stringResource(R.string.patch_from_applist),
+                        SuperArrow(
                             onClick = {
                                 navigator.navigate(
                                     SelectAppsScreenDestination(
@@ -271,17 +295,31 @@ fun NewPatchScreen(
                                         viewModel.embeddedModules.mapTo(ArrayList()) { it.app.packageName })
                                 )
                                 showSelectModuleDialog.value = false
-                            }
+                            },
+                            title = stringResource(R.string.patch_from_applist),
+                            leftAction = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Apps,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 16.dp),
+                                    tint = colorScheme.onSurface
+                                )
+                            },
+                            insideMargin = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                        )
+
+                        TextButton(
+                            text = stringResource(id = android.R.string.cancel),
+                            onClick = {
+                                showSelectModuleDialog.value = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp, bottom = 24.dp)
+                                .padding(horizontal = 24.dp)
                         )
                     }
-                    TextButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        text = stringResource(android.R.string.cancel),
-                        onClick = { showSelectModuleDialog.value = false }
-                    )
-                }
+                )
             }
         }
     }
@@ -291,9 +329,12 @@ fun NewPatchScreen(
 private fun ConfiguringFab() {
     val viewModel = viewModel<NewPatchViewModel>()
     FloatingActionButton(
-        modifier = Modifier.padding(bottom = LocalBottomBarHeight.current.value),
+        modifier = Modifier
+            .padding(bottom = 20.dp, end = 20.dp)
+            .border(0.05.dp, colorScheme.outline.copy(alpha = 0.5f), G2RoundedCornerShape(16.dp)),
+        shadowElevation = 0.dp,
         minWidth = 120.dp,
-        shape = RoundedCornerShape(16.dp),
+        shape = G2RoundedCornerShape(16.dp),
         onClick = { viewModel.dispatch(ViewAction.SubmitPatch) }
     ) {
         Row(
@@ -302,14 +343,14 @@ private fun ConfiguringFab() {
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
             Icon(
-                imageVector = MiuixIcons.Useful.Play,
+                imageVector = Icons.Rounded.AutoFixHigh,
                 contentDescription = "Add",
-                tint = MiuixTheme.colorScheme.onPrimaryContainer,
+                tint = colorScheme.onPrimaryContainer,
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 stringResource(R.string.patch_start),
-                color = MiuixTheme.colorScheme.onPrimaryContainer
+                color = colorScheme.onPrimaryContainer
             )
         }
     }
@@ -333,9 +374,9 @@ private fun PatchOptionsBody(
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
+        backgroundColor = colorScheme.background,
         tint = HazeTint(
-            MiuixTheme.colorScheme.background.copy(
+            colorScheme.background.copy(
                 if (scrollBehavior.state.collapsedFraction <= 0f) 1f
                 else lerp(1f, 0.67f, (scrollBehavior.state.collapsedFraction))
             )
@@ -369,21 +410,26 @@ private fun PatchOptionsBody(
             ConfiguringFab()
         },
         popupHost = {},
+        contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(
+            WindowInsetsSides.Horizontal
+        )
     ) { innerPadding ->
+        val layoutDirection = LocalLayoutDirection.current
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                .height(getWindowSize().height.dp)
+                .scrollEndHaptic()
                 .overScrollVertical()
+                .scrollEndHaptic()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .hazeSource(state = hazeState)
-                .hazeSource(state = LocalBottomHazeState.current),
+                .hazeSource(state = hazeState),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding() + 12.dp,
-                bottom = LocalBottomBarHeight.current.value + 12.dp,
-                start = 12.dp,
-                end = 12.dp
+                top = innerPadding.calculateTopPadding() + 6.dp,
+                start = innerPadding.calculateStartPadding(layoutDirection) + 12.dp,
+                end = innerPadding.calculateEndPadding(layoutDirection) + 12.dp
             ),
+            overscrollEffect = null,
         ) {
             item {
                 Card {
@@ -462,7 +508,7 @@ private fun PatchOptionsBody(
             }
 
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp + 20.dp))
             }
         }
     }
@@ -508,12 +554,11 @@ private fun DoPatchBody(
         BoxWithConstraints(
             Modifier
                 .padding(
-                    bottom = LocalBottomBarHeight.current.value + 12.dp,
+                    bottom = 12.dp,
                     start = 12.dp,
                     end = 12.dp
                 )
                 .padding(innerPadding)
-                .hazeSource(state = LocalBottomHazeState.current)
         ) {
             val shellBoxMaxHeight =
                 if (viewModel.patchState == PatchState.PATCHING) maxHeight
@@ -531,7 +576,7 @@ private fun DoPatchBody(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = shellBoxMaxHeight)
-                            .clip(SmoothRoundedCornerShape(CardDefaults.CornerRadius))
+                            .clip(G2RoundedCornerShape(CardDefaults.CornerRadius))
                             .background(brush)
                             .overScrollVertical(),
                         contentPadding = PaddingValues(12.dp)
@@ -705,6 +750,7 @@ private fun InstallDialog(patchApp: AppInfo, onFinish: (Int, String?) -> Unit) {
                     modifier = Modifier.weight(1f),
                     text = stringResource(android.R.string.cancel),
                     onClick = {
+                        uninstallFirst.value = false
                         onFinish(
                             LSPPackageManager.STATUS_USER_CANCELLED,
                             "User cancelled"

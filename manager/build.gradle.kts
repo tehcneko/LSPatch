@@ -97,6 +97,7 @@ dependencies {
     debugImplementation(lspatch.androidx.customview)
     debugImplementation(lspatch.androidx.customview.poolingcontainer)
     implementation(lspatch.androidx.activity.compose)
+    implementation(lspatch.androidx.compose.material.icons.extended)
     implementation(lspatch.androidx.compose.material3)
     implementation(lspatch.androidx.compose.ui)
     implementation(lspatch.androidx.compose.ui.tooling.preview)

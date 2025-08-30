@@ -9,7 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.utils.SmoothRoundedCornerShape
+import top.yukonga.miuix.kmp.utils.CornerSmoothness
+import top.yukonga.miuix.kmp.utils.G2RoundedCornerShape
 
 @Composable
 fun ListCard(
@@ -21,15 +22,15 @@ fun ListCard(
     val cornerRadius = CardDefaults.CornerRadius
     val shape = remember(cornerRadius) {
         when {
-            size == 1 -> SmoothRoundedCornerShape(16.dp)
-            index == 0 -> SmoothRoundedCornerShape(
+            size == 1 -> G2RoundedCornerShape(16.dp)
+            index == 0 -> G2RoundedCornerShape(
                 topStart = cornerRadius,
                 topEnd = cornerRadius,
                 bottomStart = 0.dp,
                 bottomEnd = 0.dp
             )
 
-            index == size - 1 -> SmoothRoundedCornerShape(
+            index == size - 1 -> G2RoundedCornerShape(
                 topStart = 0.dp,
                 topEnd = 0.dp,
                 bottomStart = cornerRadius,
@@ -41,22 +42,24 @@ fun ListCard(
     }
     val clipShape = remember(cornerRadius) {
         when {
-            size == 1 -> RoundedCornerShape(16.dp)
-            index == 0 -> RoundedCornerShape(
+            size == 1 -> G2RoundedCornerShape(16.dp, CornerSmoothness.None)
+            index == 0 -> G2RoundedCornerShape(
                 topStart = cornerRadius,
                 topEnd = cornerRadius,
                 bottomStart = 0.dp,
-                bottomEnd = 0.dp
+                bottomEnd = 0.dp,
+                cornerSmoothness = CornerSmoothness.None
             )
 
-            index == size - 1 -> RoundedCornerShape(
+            index == size - 1 -> G2RoundedCornerShape(
                 topStart = 0.dp,
                 topEnd = 0.dp,
                 bottomStart = cornerRadius,
-                bottomEnd = cornerRadius
+                bottomEnd = cornerRadius,
+                cornerSmoothness = CornerSmoothness.None
             )
 
-            else -> RoundedCornerShape(0.dp)
+            else -> G2RoundedCornerShape(0.dp, CornerSmoothness.None)
         }
     }
     Box(
