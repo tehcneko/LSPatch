@@ -45,8 +45,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.RemoveModerator
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -85,6 +90,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.lsposed.lspatch.R
 import org.lsposed.lspatch.lspApp
+import org.lsposed.lspatch.ui.component.AppItem
 import org.lsposed.lspatch.ui.component.LoadingDialog
 import org.lsposed.lspatch.ui.component.ShimmerAnimation
 import org.lsposed.lspatch.ui.util.LocalSnackbarHost
@@ -96,7 +102,6 @@ import org.lsposed.lspatch.ui.viewmodel.NewPatchViewModel.ViewAction
 import org.lsposed.lspatch.util.LSPPackageManager
 import org.lsposed.lspatch.util.LSPPackageManager.AppInfo
 import org.lsposed.lspatch.util.ShizukuApi
-import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -112,7 +117,6 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.extra.SpinnerEntry
 import top.yukonga.miuix.kmp.extra.SuperArrow
 import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.extra.SuperSpinner
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -433,9 +437,10 @@ private fun PatchOptionsBody(
         ) {
             item {
                 Card {
-                    BasicComponent(
-                        title = viewModel.patchApp.label,
-                        summary = viewModel.patchApp.app.packageName,
+                    AppItem(
+                        icon = LSPPackageManager.getIcon(viewModel.patchApp),
+                        label = viewModel.patchApp.label,
+                        packageName = viewModel.patchApp.app.packageName,
                     )
                 }
             }
@@ -458,6 +463,14 @@ private fun PatchOptionsBody(
                         selectedIndex = if (viewModel.useManager) 0 else 1,
                         onSelectedIndexChange = {
                             viewModel.useManager = it == 0
+                        },
+                        leftAction = {
+                            Icon(
+                                imageVector = Icons.Rounded.Api,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                                tint = colorScheme.onSurface
+                            )
                         }
                     )
                     AnimatedVisibility(
@@ -468,6 +481,14 @@ private fun PatchOptionsBody(
                         SuperArrow(
                             title = stringResource(R.string.patch_embed_modules),
                             onClick = onAddEmbed,
+                            leftAction = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Apps,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 16.dp),
+                                    tint = colorScheme.onSurface
+                                )
+                            }
                         )
                     }
                 }
@@ -479,30 +500,66 @@ private fun PatchOptionsBody(
                         checked = viewModel.debuggable,
                         title = stringResource(R.string.patch_debuggable),
                         onCheckedChange = { viewModel.debuggable = it },
+                        leftAction = {
+                            Icon(
+                                imageVector = Icons.Rounded.BugReport,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                                tint = colorScheme.onSurface
+                            )
+                        }
                     )
 
                     SuperSwitch(
                         checked = viewModel.overrideVersionCode,
                         title = stringResource(R.string.patch_override_version_code),
                         summary = stringResource(R.string.patch_override_version_code_desc),
-                        onCheckedChange = { viewModel.overrideVersionCode = it }
+                        onCheckedChange = { viewModel.overrideVersionCode = it },
+                        leftAction = {
+                            Icon(
+                                imageVector = Icons.Rounded.Layers,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                                tint = colorScheme.onSurface
+                            )
+                        }
                     )
 
                     SuperSwitch(
                         checked = viewModel.injectDex,
                         title = stringResource(R.string.patch_inject_dex),
                         summary = stringResource(R.string.patch_inject_dex_desc),
-                        onCheckedChange = { viewModel.injectDex = it }
+                        onCheckedChange = { viewModel.injectDex = it },
+                        leftAction = {
+                            Icon(
+                                imageVector = Icons.Rounded.Code,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                                tint = colorScheme.onSurface
+                            )
+                        }
                     )
 
                     val options =
-                        listOf(sigBypassLvStr(0), sigBypassLvStr(1), sigBypassLvStr(2))
-                    SuperDropdown(
+                        listOf(
+                            SpinnerEntry(title = sigBypassLvStr(0)),
+                            SpinnerEntry(title = sigBypassLvStr(1)),
+                            SpinnerEntry(title = sigBypassLvStr(2))
+                        )
+                    SuperSpinner(
                         title = stringResource(R.string.patch_sigbypass),
                         summary = sigBypassLvStr(viewModel.sigBypassLevel),
                         items = options,
                         selectedIndex = viewModel.sigBypassLevel,
-                        onSelectedIndexChange = { viewModel.sigBypassLevel = it }
+                        onSelectedIndexChange = { viewModel.sigBypassLevel = it },
+                        leftAction = {
+                            Icon(
+                                imageVector = Icons.Rounded.RemoveModerator,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                                tint = colorScheme.onSurface
+                            )
+                        }
                     )
                 }
             }

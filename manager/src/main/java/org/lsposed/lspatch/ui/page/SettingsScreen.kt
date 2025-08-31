@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Ballot
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,16 +49,19 @@ import org.lsposed.lspatch.config.Configs
 import org.lsposed.lspatch.config.MyKeyStore
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.extra.SpinnerEntry
 import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.SuperDropdown
+import top.yukonga.miuix.kmp.extra.SuperSpinner
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.utils.getWindowSize
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -70,9 +76,9 @@ fun SettingsScreen(
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
+        backgroundColor = colorScheme.background,
         tint = HazeTint(
-            MiuixTheme.colorScheme.background.copy(
+            colorScheme.background.copy(
                 if (scrollBehavior.state.collapsedFraction <= 0f) 1f
                 else lerp(1f, 0.67f, (scrollBehavior.state.collapsedFraction))
             )
@@ -130,11 +136,11 @@ private fun KeyStore() {
     var showDialog = remember { mutableStateOf(false) }
 
     val options = listOf(
-        stringResource(R.string.settings_keystore_default),
-        stringResource(R.string.settings_keystore_custom)
+        SpinnerEntry(title = stringResource(R.string.settings_keystore_default)),
+        SpinnerEntry(title = stringResource(R.string.settings_keystore_custom))
     )
 
-    SuperDropdown(
+    SuperSpinner(
         title = stringResource(R.string.settings_keystore),
         items = options,
         selectedIndex = if (MyKeyStore.useDefault) 0 else 1,
@@ -144,6 +150,14 @@ private fun KeyStore() {
             } else {
                 showDialog.value = true
             }
+        },
+        leftAction = {
+            Icon(
+                imageVector = Icons.Rounded.Ballot,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 16.dp),
+                tint = colorScheme.onSurface
+            )
         }
     )
 
@@ -213,7 +227,7 @@ private fun KeyStore() {
                         label = stringResource(R.string.settings_keystore_file),
                         useLabelAsPlaceholder = true,
                         singleLine = true,
-                        labelColor = if (wrongKeystore) errorColor else MiuixTheme.colorScheme.onSecondaryContainer,
+                        labelColor = if (wrongKeystore) errorColor else colorScheme.onSecondaryContainer,
                         interactionSource = interactionSource,
                     )
                     TextField(
@@ -221,21 +235,21 @@ private fun KeyStore() {
                         onValueChange = { password = it },
                         label = stringResource(R.string.settings_keystore_password),
                         singleLine = true,
-                        labelColor = if (wrongPassword) errorColor else MiuixTheme.colorScheme.onSecondaryContainer,
+                        labelColor = if (wrongPassword) errorColor else colorScheme.onSecondaryContainer,
                     )
                     TextField(
                         value = alias,
                         onValueChange = { alias = it },
                         label = stringResource(R.string.settings_keystore_alias),
                         singleLine = true,
-                        labelColor = if (wrongAliasName) errorColor else MiuixTheme.colorScheme.onSecondaryContainer,
+                        labelColor = if (wrongAliasName) errorColor else colorScheme.onSecondaryContainer,
                     )
                     TextField(
                         value = aliasPassword,
                         onValueChange = { aliasPassword = it },
                         label = stringResource(R.string.settings_keystore_alias_password),
                         singleLine = true,
-                        labelColor = if (wrongAliasPassword) errorColor else MiuixTheme.colorScheme.onSecondaryContainer,
+                        labelColor = if (wrongAliasPassword) errorColor else colorScheme.onSecondaryContainer,
                     )
                 }
             }
@@ -304,5 +318,13 @@ private fun DetailPatchLogs() {
             Configs.detailPatchLogs = it
         },
         title = stringResource(R.string.settings_detail_patch_logs),
+        leftAction = {
+            Icon(
+                imageVector = Icons.Rounded.BugReport,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 16.dp),
+                tint = colorScheme.onSurface
+            )
+        }
     )
 }

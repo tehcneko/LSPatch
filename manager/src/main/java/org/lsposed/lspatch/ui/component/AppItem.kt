@@ -4,7 +4,6 @@ import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -22,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,7 +64,7 @@ fun AppItem(
             }
         }
     }
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .then(
@@ -78,44 +76,39 @@ fun AppItem(
                     )
                 } else Modifier
             )
-            .padding(12.dp)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Icon(
+            bitmap = icon,
+            contentDescription = label,
+            tint = Color.Unspecified
+        )
+        Column(
+            modifier = Modifier.padding(start = 12.dp),
         ) {
-            Icon(
-                bitmap = icon,
-                contentDescription = label,
-                tint = Color.Unspecified
+            Text(
+                color = MiuixTheme.colorScheme.onSurface,
+                text = label,
+                fontSize = MiuixTheme.textStyles.headline1.fontSize,
+                fontWeight = FontWeight.Medium,
             )
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    color = MiuixTheme.colorScheme.onSurface,
-                    text = label,
-                    fontSize = MiuixTheme.textStyles.headline1.fontSize,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = packageName,
-                    fontSize = MiuixTheme.textStyles.body2.fontSize,
-                    fontFamily = FontFamily.Monospace,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                )
-                additionalContent?.invoke(this)
-            }
-            if (checked != null) {
-                Checkbox(
-                    checked = checked,
-                    onCheckedChange = null,
-                )
-            }
-            if (rightIcon != null) {
-                rightIcon()
-            }
+            Text(
+                text = packageName,
+                fontSize = MiuixTheme.textStyles.body2.fontSize,
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            )
+            additionalContent?.invoke(this)
+        }
+        if (checked != null) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = null,
+            )
+        }
+        if (rightIcon != null) {
+            rightIcon()
         }
     }
 }
